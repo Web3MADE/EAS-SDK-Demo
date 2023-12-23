@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useEAS } from "./hooks/useEAS";
 
 // Define TypeScript types for state
 type SchemaDetails = {
@@ -11,7 +12,10 @@ type AttestationDetails = {
   // Add other attestation-related fields here
 };
 
-const App: React.FC = () => {
+const App = () => {
+  const eas = useEAS();
+
+  console.log("eas ", eas);
   const [schemaDetails, setSchemaDetails] = useState<SchemaDetails>({
     schemaName: "",
   });
