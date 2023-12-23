@@ -57,6 +57,18 @@ const App = () => {
     // Implement revocation logic here
   };
 
+  async function getAttestation() {
+    if (!eas) return;
+    try {
+      const attestation = await eas.getAttestation(
+        "0x4ee6052e832dba425c2fe53611a565a1e47630b7a741bc37e8d425fe7a2be1ec"
+      );
+      console.log("attestation ", attestation?.attester);
+    } catch (error) {
+      console.log("error getting Attestation ", error);
+    }
+  }
+
   return (
     <div
       style={{
@@ -75,7 +87,7 @@ const App = () => {
         onChange={handleSchemaChange}
         placeholder="Schema Name"
       />
-      <button onClick={registerSchema}>Register Schema</button>
+      <button onClick={() => getAttestation()}>Register Schema</button>
 
       <h2>Create Attestation</h2>
       <input
