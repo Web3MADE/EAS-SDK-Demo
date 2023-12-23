@@ -12,10 +12,12 @@ type AttestationDetails = {
   // Add other attestation-related fields here
 };
 
+// TODO:
+// 1. finish UI for attestation
+// 2. switch between admin & client view
+// 3. implement SDK logic
 const App = () => {
   const eas = useEAS();
-
-  console.log("eas ", eas);
   const [schemaDetails, setSchemaDetails] = useState<SchemaDetails>({
     schemaName: "",
   });
@@ -78,6 +80,9 @@ const App = () => {
       }}
     >
       <h1>Ethereum Attestation Service</h1>
+      <h2 style={{ textAlign: "center" }}>
+        Admin registers a schema for their own reputation
+      </h2>
 
       <h2>Register Schema</h2>
       <input
@@ -87,7 +92,28 @@ const App = () => {
         onChange={handleSchemaChange}
         placeholder="Schema Name"
       />
-      <button onClick={() => getAttestation()}>Register Schema</button>
+      <input
+        type="text"
+        name="clientName"
+        value={schemaDetails.schemaName}
+        onChange={handleSchemaChange}
+        placeholder="Client Name"
+      />
+      <input
+        type="text"
+        name="valueOfWork"
+        value={schemaDetails.schemaName}
+        onChange={handleSchemaChange}
+        placeholder="Value of work (1-100)"
+      />
+      <input
+        type="text"
+        name="recommend"
+        value={schemaDetails.schemaName}
+        onChange={handleSchemaChange}
+        placeholder="Recommend"
+      />
+      <button onClick={registerSchema}>Register Schema</button>
 
       <h2>Create Attestation</h2>
       <input

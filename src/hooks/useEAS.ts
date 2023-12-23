@@ -5,20 +5,21 @@ import { useEffect, useState } from "react";
 export const useEAS = () => {
   const EASContractAddress = "0xC2679fBD37d54388Ce493F1DB75320D236e1815e"; // Sepolia v0.26
   const [eas, setEAS] = useState<EAS>();
+  // const [currentAddress, setCurrentAddress] = useState<string>();
 
   useEffect(() => {
-    if (!eas) {
-      // Initialize the sdk with the address of the EAS Schema contract address
-      const easInstance = new EAS(EASContractAddress);
+    if (eas) return;
+    // Initialize the sdk with the address of the EAS Schema contract address
+    const easInstance = new EAS(EASContractAddress);
 
-      // Gets a default provider (in production use something else like infura/alchemy)
-      const provider = ethers.getDefaultProvider("sepolia");
+    // Gets a default provider (in production use something else like infura/alchemy)
+    const provider = ethers.getDefaultProvider("sepolia");
 
-      // Connects an ethers style provider/signingProvider to perform read/write functions.
-      easInstance.connect(provider);
+    // Connects an ethers style provider/signingProvider to perform read/write functions.
+    easInstance.connect(provider);
 
-      setEAS(easInstance);
-    }
+    setEAS(easInstance);
+    // setCurrentAddress(provider);
   }, [eas]);
 
   return eas;
