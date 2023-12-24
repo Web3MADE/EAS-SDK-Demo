@@ -1,11 +1,11 @@
 import { SchemaEncoder } from "@ethereum-attestation-service/eas-sdk";
-import React, { useState } from "react";
+import { useState } from "react";
 import { SCHEMA, SCHEMA_DETAILS } from "./config/config";
 import { useEAS } from "./hooks/useEAS";
 
 type AttestationData = {
   freelancer: string;
-  valueOfWork: number;
+  workQuality: number;
   recommend: boolean;
 };
 /** @dev AFTER REGISTERING A SCHEMA, OR MAKING AN ATTESTATION
@@ -13,18 +13,17 @@ type AttestationData = {
  * */
 const App = () => {
   const { eas, schemaRegistry, currentAddress } = useEAS();
+  console.log("currentAddress ", currentAddress);
   // schemaUID is set when Freelancer register's their own reputation schema
   const [schemaUID, setSchemaUID] = useState<string>(
-    "0x5dd52dd5116bc3b40c166ecad9edfa039ffc7cf594d6513a57ea2637a492cbd6"
+    "0x115908c1b0cc984bae16f262620dec3b9d1235372100d0ca0f115b62b43d3bfc"
   );
-  // attestationUID is set when a client attests to the reputation schema
   const [attestationUID, setAttestationUID] = useState<string>(
-    "0x55c9f929a4e4de0b327ed1a196e8b1325d768eb58dc74276f845934e6288a538"
+    "0x4968c28d7e6a01c46c2bc1cfc5edb64a49e94801126c0c0a1d848ed72bd262c9"
   );
-  // attestationData is set by client in the frontend code
   const [attestationData, setAttestationData] = useState<AttestationData>({
     freelancer: "",
-    valueOfWork: 0,
+    workQuality: 0,
     recommend: false,
   });
 
@@ -36,8 +35,9 @@ const App = () => {
       [name]: type === "checkbox" ? checked : value,
     });
   };
-  // Handlers for button clicks (to be implemented)
-  // TODO now: continue sdk implementation
+
+  // attestationUID is set when a client attests to the reputation schema
+
   const registerSchema = async () => {
     if (!schemaRegistry) return;
     const transaction = await schemaRegistry.register({
@@ -45,20 +45,19 @@ const App = () => {
       resolverAddress: undefined,
       revocable: true,
     });
-    // schemaRegistry returns uid from event emitted on registration
     const uid = await transaction.wait();
+    console.log("schemaUID ", uid);
     setSchemaUID(uid);
   };
 
   const createAttestation = async () => {
-    // SchemaUID required to make attestations
     if (!eas || !schemaUID) return;
     const schemaEncoder = new SchemaEncoder(SCHEMA);
     const encodedData = schemaEncoder.encodeData([
       { name: "clientName", value: currentAddress, type: "string" },
       {
-        name: "valueOfWork",
-        value: attestationData.valueOfWork,
+        name: "workQuality",
+        value: attestationData.workQuality,
         type: "uint8",
       },
       { name: "recommend", value: attestationData.recommend, type: "bool" },
@@ -118,7 +117,7 @@ const App = () => {
             <strong>Client Name:</strong> {SCHEMA_DETAILS.clientName}
           </div>
           <div>
-            <strong>Value of Work:</strong> {SCHEMA_DETAILS.valueOfWork}
+            <strong>Value of Work:</strong> {SCHEMA_DETAILS.workQuality}
           </div>
           <div>
             <strong>Recommend:</strong> {SCHEMA_DETAILS.recommend}
@@ -127,35 +126,39 @@ const App = () => {
         </>
       )}
 
-      <h2>Create Attestation</h2>
-      <input
-        type="text"
-        name="freelancer"
-        value={attestationData.freelancer}
-        onChange={handleAttestationChange}
-        placeholder="Freelancer"
-      />
-      <input
-        type="text"
-        name="valueOfWork"
-        value={attestationData.valueOfWork}
-        onChange={handleAttestationChange}
-        placeholder="Value of work (1-100)"
-      />
-      <label htmlFor="recommendCheckbox">
-        Would you recommend this freelancer?
-      </label>
-      <input
-        type="checkbox"
-        id="recommend"
-        name="recommend"
-        checked={attestationData.recommend}
-        onChange={handleAttestationChange}
-      />
-      <button onClick={createAttestation}>Create Attestation</button>
+      {schemaUID && (
+        <>
+          <h2>Create Attestation</h2>
+          <input
+            type="text"
+            name="freelancer"
+            value={attestationData.freelancer}
+            onChange={handleAttestationChange}
+            placeholder="Freelancer"
+          />
+          <input
+            type="text"
+            name="workQuality"
+            value={attestationData.workQuality}
+            onChange={handleAttestationChange}
+            placeholder="Value of work (1-100)"
+          />
+          <label htmlFor="recommendCheckbox">
+            Would you recommend this freelancer?
+          </label>
+          <input
+            type="checkbox"
+            id="recommend"
+            name="recommend"
+            checked={attestationData.recommend}
+            onChange={handleAttestationChange}
+          />
+          <button onClick={createAttestation}>Create Attestation</button>
 
-      <h2>Revoke Attestation</h2>
-      <button onClick={revokeAttestation}>Revoke Attestation</button>
+          <h2>Revoke Attestation</h2>
+          <button onClick={revokeAttestation}>Revoke Attestation</button>
+        </>
+      )}
     </div>
   );
 };
