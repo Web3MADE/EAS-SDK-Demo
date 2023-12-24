@@ -11,7 +11,9 @@ type AttestationDetails = {
 // 1. implement SDK logic
 const App = () => {
   const { eas, schemaRegistry } = useEAS();
-  const [schemaUID, setSchemaUID] = useState<string>("");
+  const [schemaUID, setSchemaUID] = useState<string>(
+    "0x5dd52dd5116bc3b40c166ecad9edfa039ffc7cf594d6513a57ea2637a492cbd6"
+  );
   const [attestationDetails, setAttestationDetails] =
     useState<AttestationDetails>({ attestationData: "" });
   const [attestationId, setAttestationId] = useState<string>("");
@@ -43,8 +45,9 @@ const App = () => {
       resolverAddress: undefined,
       revocable: true,
     });
-    console.log("Registering Schema:", transaction);
-    // Implement registration logic here
+    // schemaRegistry returns uid from event emitted on registration
+    const uid = await transaction.wait();
+    setSchemaUID(uid);
   };
 
   const createAttestation = () => {
