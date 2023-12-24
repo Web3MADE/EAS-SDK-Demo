@@ -12,18 +12,23 @@ export const useEAS = () => {
 
   useEffect(() => {
     if (eas) return;
-    // Initialize the sdk with the address of the EAS Schema contract address
-    const easInstance = new EAS(EASContractAddress);
-    const schemaRegistry = new SchemaRegistry(schemaRegistryContractAddress);
+    const init = async () => {
+      // Initialize the sdk with the address of the EAS Schema contract address
+      const easInstance = new EAS(EASContractAddress);
+      const schemaRegistry = new SchemaRegistry(schemaRegistryContractAddress);
 
-    // Gets a default provider (in production use something else like infura/alchemy)
-    const provider = ethers.getDefaultProvider("sepolia");
+      // Gets a default provider (in production use something else like infura/alchemy)
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
-    // Connects an ethers style provider/signingProvider to perform read/write functions.
-    easInstance.connect(provider);
+      // Connects an ethers style provider/signingProvider to perform read/write functions.
+      easInstance.connect(signer); // allow clients to attest against freelancer's schema
+      schemaRegistry.connect(signer); // allow Freelancer to register their own reputation schema
+      setEAS(easInstance);
+      setSchemaRegistry(schemaRegistry);
+    };
+    init();
 
-    setEAS(easInstance);
-    setSchemaRegistry(schemaRegistry);
     // setCurrentAddress(provider);
   }, [eas]);
 
