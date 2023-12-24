@@ -1,41 +1,41 @@
+import { SchemaEncoder } from "@ethereum-attestation-service/eas-sdk";
 import React, { useState } from "react";
 import { SCHEMA, SCHEMA_DETAILS } from "./config/config";
 import { useEAS } from "./hooks/useEAS";
 
-type AttestationDetails = {
-  attestationData: string;
-  // Add other attestation-related fields here
+type AttestationData = {
+  freelancer: string;
+  valueOfWork: number;
+  recommend: boolean;
 };
-
-// TODO: Keep admin --> client flow in react state when switching
-// 1. implement SDK logic
+/** @dev AFTER REGISTERING A SCHEMA, OR MAKING AN ATTESTATION
+ * IF YOU REFRESH APP MAKE SURE TO PASTE IN SCHEMA/ATTESTATIONUID IN STATE VARIABLES OR ELSE APP WONT WORK
+ * */
 const App = () => {
-  const { eas, schemaRegistry } = useEAS();
+  const { eas, schemaRegistry, currentAddress } = useEAS();
+  // schemaUID is set when Freelancer register's their own reputation schema
   const [schemaUID, setSchemaUID] = useState<string>(
     "0x5dd52dd5116bc3b40c166ecad9edfa039ffc7cf594d6513a57ea2637a492cbd6"
   );
-  const [attestationDetails, setAttestationDetails] =
-    useState<AttestationDetails>({ attestationData: "" });
-  const [attestationId, setAttestationId] = useState<string>("");
-  const [isRecommended, setIsRecommened] = useState(false);
+  // attestationUID is set when a client attests to the reputation schema
+  const [attestationUID, setAttestationUID] = useState<string>(
+    "0x55c9f929a4e4de0b327ed1a196e8b1325d768eb58dc74276f845934e6288a538"
+  );
+  // attestationData is set by client in the frontend code
+  const [attestationData, setAttestationData] = useState<AttestationData>({
+    freelancer: "",
+    valueOfWork: 0,
+    recommend: false,
+  });
 
   const handleAttestationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAttestationDetails({
-      ...attestationDetails,
-      [e.target.name]: e.target.value,
+    const { name, type, value, checked } = e.target;
+
+    setAttestationData({
+      ...attestationData,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
-
-  const handleAttestationIdChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setAttestationId(e.target.value);
-  };
-
-  const handleReccomendationChange = () => {
-    setIsRecommened((prev) => !prev);
-  };
-
   // Handlers for button clicks (to be implemented)
   // TODO now: continue sdk implementation
   const registerSchema = async () => {
@@ -50,27 +50,48 @@ const App = () => {
     setSchemaUID(uid);
   };
 
-  const createAttestation = () => {
-    console.log("Creating Attestation:", attestationDetails);
-    // Implement creation logic here
+  const createAttestation = async () => {
+    // SchemaUID required to make attestations
+    if (!eas || !schemaUID) return;
+    const schemaEncoder = new SchemaEncoder(SCHEMA);
+    const encodedData = schemaEncoder.encodeData([
+      { name: "clientName", value: currentAddress, type: "string" },
+      {
+        name: "valueOfWork",
+        value: attestationData.valueOfWork,
+        type: "uint8",
+      },
+      { name: "recommend", value: attestationData.recommend, type: "bool" },
+    ]);
+
+    const transaction = await eas.attest({
+      schema: schemaUID,
+      data: {
+        recipient: attestationData.freelancer,
+        expirationTime: undefined,
+        revocable: true, // Be aware that if your schema is not revocable, this MUST be false
+        data: encodedData,
+      },
+    });
+
+    const newAttestationUID = await transaction.wait();
+    setAttestationUID(newAttestationUID);
+
+    console.log("New attestation UID:", newAttestationUID);
+    console.log("Creating Attestation:", attestationData);
   };
 
-  const revokeAttestation = () => {
-    console.log("Revoking Attestation:", attestationId);
-    // Implement revocation logic here
-  };
-
-  async function getAttestation() {
+  const revokeAttestation = async () => {
     if (!eas) return;
-    try {
-      const attestation = await eas.getAttestation(
-        "0x4ee6052e832dba425c2fe53611a565a1e47630b7a741bc37e8d425fe7a2be1ec"
-      );
-      console.log("attestation ", attestation?.attester);
-    } catch (error) {
-      console.log("error getting Attestation ", error);
-    }
-  }
+    const attestation = await eas.getAttestation(attestationUID);
+
+    const transaction = await eas.revoke({
+      schema: attestation.schema,
+      data: { uid: attestation.uid },
+    });
+    const receipt = await transaction.wait();
+    console.log("Revoking Attestation:", receipt);
+  };
 
   return (
     <div
@@ -83,8 +104,8 @@ const App = () => {
       <h1>Ethereum Attestation Service</h1>
       <h2 style={{ textAlign: "center" }}>
         {!schemaUID
-          ? "1: Freelancer registers a schema for their own reputation"
-          : "2: Client creates attestation for Freelancer`s credibility"}
+          ? "Step 1: Freelancer registers a schema for their own reputation"
+          : "Step 2: Client creates attestation for Freelancer`s credibility"}
       </h2>
 
       {!schemaUID && (
@@ -110,14 +131,14 @@ const App = () => {
       <input
         type="text"
         name="freelancer"
-        value={attestationDetails.attestationData}
+        value={attestationData.freelancer}
         onChange={handleAttestationChange}
         placeholder="Freelancer"
       />
       <input
         type="text"
         name="valueOfWork"
-        value={attestationDetails.attestationData}
+        value={attestationData.valueOfWork}
         onChange={handleAttestationChange}
         placeholder="Value of work (1-100)"
       />
@@ -126,21 +147,14 @@ const App = () => {
       </label>
       <input
         type="checkbox"
-        id="recommendCheckboxTrue"
+        id="recommend"
         name="recommend"
-        checked={isRecommended}
-        onChange={handleReccomendationChange}
+        checked={attestationData.recommend}
+        onChange={handleAttestationChange}
       />
       <button onClick={createAttestation}>Create Attestation</button>
 
       <h2>Revoke Attestation</h2>
-      <input
-        type="text"
-        name="freelancer"
-        value={attestationDetails.attestationData}
-        onChange={handleAttestationChange}
-        placeholder="Freelancer"
-      />
       <button onClick={revokeAttestation}>Revoke Attestation</button>
     </div>
   );
