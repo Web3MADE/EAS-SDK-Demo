@@ -1,34 +1,21 @@
 import React, { useState } from "react";
+import { SCHEMA, SCHEMA_DETAILS } from "./config/config";
 import { useEAS } from "./hooks/useEAS";
-
-// Define TypeScript types for state
-type SchemaDetails = {
-  schemaName: string;
-  // Add other schema-related fields here
-};
 
 type AttestationDetails = {
   attestationData: string;
   // Add other attestation-related fields here
 };
 
-// TODO:
-// 1. finish UI for attestation
-// 2. switch between admin & client view
-// 3. implement SDK logic
+// TODO: Keep admin --> client flow in react state when switching
+// 1. implement SDK logic
 const App = () => {
-  const eas = useEAS();
-  const [schemaDetails, setSchemaDetails] = useState<SchemaDetails>({
-    schemaName: "",
-  });
+  const { eas, schemaRegistry } = useEAS();
+  const [schemaUID, setSchemaUID] = useState<string>("");
   const [attestationDetails, setAttestationDetails] =
     useState<AttestationDetails>({ attestationData: "" });
   const [attestationId, setAttestationId] = useState<string>("");
-
-  // Handlers for input changes
-  const handleSchemaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSchemaDetails({ ...schemaDetails, [e.target.name]: e.target.value });
-  };
+  const [isRecommended, setIsRecommened] = useState(false);
 
   const handleAttestationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAttestationDetails({
@@ -43,9 +30,20 @@ const App = () => {
     setAttestationId(e.target.value);
   };
 
+  const handleReccomendationChange = () => {
+    setIsRecommened((prev) => !prev);
+  };
+
   // Handlers for button clicks (to be implemented)
-  const registerSchema = () => {
-    console.log("Registering Schema:", schemaDetails);
+  // TODO now: continue sdk implementation
+  const registerSchema = async () => {
+    if (!schemaRegistry) return;
+    const transaction = await schemaRegistry.register({
+      schema: SCHEMA,
+      resolverAddress: undefined,
+      revocable: true,
+    });
+    console.log("Registering Schema:", transaction);
     // Implement registration logic here
   };
 
@@ -81,56 +79,64 @@ const App = () => {
     >
       <h1>Ethereum Attestation Service</h1>
       <h2 style={{ textAlign: "center" }}>
-        Admin registers a schema for their own reputation
+        {!schemaUID
+          ? "1: Freelancer registers a schema for their own reputation"
+          : "2: Client creates attestation for Freelancer`s credibility"}
       </h2>
 
-      <h2>Register Schema</h2>
-      <input
-        type="text"
-        name="schemaName"
-        value={schemaDetails.schemaName}
-        onChange={handleSchemaChange}
-        placeholder="Schema Name"
-      />
-      <input
-        type="text"
-        name="clientName"
-        value={schemaDetails.schemaName}
-        onChange={handleSchemaChange}
-        placeholder="Client Name"
-      />
-      <input
-        type="text"
-        name="valueOfWork"
-        value={schemaDetails.schemaName}
-        onChange={handleSchemaChange}
-        placeholder="Value of work (1-100)"
-      />
-      <input
-        type="text"
-        name="recommend"
-        value={schemaDetails.schemaName}
-        onChange={handleSchemaChange}
-        placeholder="Recommend"
-      />
-      <button onClick={registerSchema}>Register Schema</button>
+      {!schemaUID && (
+        <>
+          <h2>Register Schema</h2>
+          <div>
+            <strong>Schema Name:</strong> {SCHEMA_DETAILS.schemaName}
+          </div>
+          <div>
+            <strong>Client Name:</strong> {SCHEMA_DETAILS.clientName}
+          </div>
+          <div>
+            <strong>Value of Work:</strong> {SCHEMA_DETAILS.valueOfWork}
+          </div>
+          <div>
+            <strong>Recommend:</strong> {SCHEMA_DETAILS.recommend}
+          </div>
+          <button onClick={registerSchema}>Register Schema</button>
+        </>
+      )}
 
       <h2>Create Attestation</h2>
       <input
         type="text"
-        name="attestationData"
+        name="freelancer"
         value={attestationDetails.attestationData}
         onChange={handleAttestationChange}
-        placeholder="Attestation Data"
+        placeholder="Freelancer"
+      />
+      <input
+        type="text"
+        name="valueOfWork"
+        value={attestationDetails.attestationData}
+        onChange={handleAttestationChange}
+        placeholder="Value of work (1-100)"
+      />
+      <label htmlFor="recommendCheckbox">
+        Would you recommend this freelancer?
+      </label>
+      <input
+        type="checkbox"
+        id="recommendCheckboxTrue"
+        name="recommend"
+        checked={isRecommended}
+        onChange={handleReccomendationChange}
       />
       <button onClick={createAttestation}>Create Attestation</button>
 
       <h2>Revoke Attestation</h2>
       <input
         type="text"
-        value={attestationId}
-        onChange={handleAttestationIdChange}
-        placeholder="Attestation ID"
+        name="freelancer"
+        value={attestationDetails.attestationData}
+        onChange={handleAttestationChange}
+        placeholder="Freelancer"
       />
       <button onClick={revokeAttestation}>Revoke Attestation</button>
     </div>
