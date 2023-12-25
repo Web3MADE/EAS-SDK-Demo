@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-import { SchemaResolver } from "../SchemaResolver.sol";
+import { SchemaResolver } from "@eas-contracts/contracts/resolver/SchemaResolver.sol";
 
-import { IEAS, Attestation } from "../../IEAS.sol";
+import { IEAS, Attestation } from "@eas-contracts/contracts/IEAS.sol";
 
 /// @title PayingResolver
 /// @notice A sample schema resolver that pays attesters (and expects the payment to be returned during revocations).
