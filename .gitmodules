@@ -7,3 +7,6 @@
 [submodule "foundry/lib/eas-contracts"]
 	path = foundry/lib/eas-contracts
 	url = https://github.com/ethereum-attestation-service/eas-contracts
+[submodule "foundry/lib/openzeppelin-contracts"]
+	path = foundry/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
