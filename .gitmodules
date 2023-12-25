@@ -1,0 +1,3 @@
+[submodule "resolvers/lib/forge-std"]
+	path = resolvers/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
