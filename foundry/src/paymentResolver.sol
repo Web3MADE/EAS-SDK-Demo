@@ -8,42 +8,24 @@ import { SchemaResolver } from "@eas-contracts/contracts/resolver/SchemaResolver
 
 import { IEAS, Attestation } from "@eas-contracts/contracts/IEAS.sol";
 
-/// @title PayingResolver
-/// @notice A sample schema resolver that pays attesters (and expects the payment to be returned during revocations).
-contract PayingResolver is SchemaResolver {
-    using Address for address payable;
+/// @title PaymentResolver
+/// @notice A sample schema resolver that checks whether a specific amount of ETH was sent with an attestation.
+contract PaymentResolver is SchemaResolver {
+    uint256 private immutable _targetValue;
 
-    error InvalidValue();
-
-    uint256 private immutable _incentive;
-
-    constructor(IEAS eas, uint256 incentive) SchemaResolver(eas) {
-        _incentive = incentive;
+    constructor(IEAS eas, uint256 targetValue) SchemaResolver(eas) {
+        _targetValue = targetValue;
     }
 
     function isPayable() public pure override returns (bool) {
         return true;
     }
 
-    function onAttest(Attestation calldata attestation, uint256 value) internal override returns (bool) {
-        if (value > 0) {
-            return false;
-        }
-
-        payable(attestation.attester).transfer(_incentive);
-
-        return true;
+    function onAttest(Attestation calldata /*attestation*/, uint256 value) internal view override returns (bool) {
+        return value == _targetValue;
     }
 
-    function onRevoke(Attestation calldata attestation, uint256 value) internal override returns (bool) {
-        if (value < _incentive) {
-            return false;
-        }
-
-        if (value > _incentive) {
-            payable(address(attestation.attester)).sendValue(value - _incentive);
-        }
-
+    function onRevoke(Attestation calldata /*attestation*/, uint256 /*value*/) internal pure override returns (bool) {
         return true;
     }
 }
